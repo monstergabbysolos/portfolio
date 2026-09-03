@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Joe Gabriel — Mechatronics Engineer & Innovator</title>
+<style>
+:root{
+  --bg:#020a18;--bg2:#040f24;--cyan:#00f5ff;--blue:#0080ff;--blue2:#003d7a;
+  --text:#c8e8ff;--text2:#6ea8d4;--card:rgba(0,120,200,0.08);
+  --border:rgba(0,245,255,0.15);--glow:0 0 20px rgba(0,245,255,0.4);
+  --glow2:0 0 40px rgba(0,245,255,0.2);--font:'Segoe UI',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);cursor:none;overflow-x:hidden}
+
+/* ── CURSOR ── */
+#cursor{position:fixed;width:12px;height:12px;border-radius:50%;background:var(--cyan);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .1s,background .2s;mix-blend-mode:screen}
+#cursor-ring{position:fixed;width:36px;height:36px;border-radius:50%;border:1px solid var(--cyan);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .18s ease;opacity:.6}
+.trail-dot{position:fixed;width:4px;height:4px;border-radius:50%;background:var(--cyan);pointer-events:none;opacity:.3;transform:translate(-50%,-50%)}
+@media(hover:none){#cursor,#cursor-ring,.trail-dot{display:none}body{cursor:auto}}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s}
+#loader.gone{opacity:0;visibility:hidden;pointer-events:none}
+.loader-text{font-size:clamp(1rem,3vw,1.4rem);letter-spacing:.4em;color:var(--cyan);font-family:'Courier New',monospace;animation:blink 1s infinite}
+.loader-bar{width:min(200px,60vw);height:2px;background:var(--blue2);margin-top:20px;overflow:hidden;border-radius:2px}
+.loader-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0;animation:load 2s ease forwards}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes load{0%{width:0}100%{width:100%}}
+
+/* ── CANVAS ── */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);background:rgba(2,10,24,0.8)}
+.nav-logo{font-size:1.1rem;font-weight:700;letter-spacing:.3em;color:var(--cyan);font-family:'Courier New',monospace;text-decoration:none}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;transition:color .2s,text-shadow .2s}
+.nav-links a:hover{color:var(--cyan);text-shadow:var(--glow)}
+/* hamburger */
+.nav-toggle{display:none;flex-direction:column;gap:5px;padding:6px;background:none;border:none;cursor:pointer}
+.nav-toggle span{display:block;width:22px;height:1.5px;background:var(--cyan);transition:all .3s}
+.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:rgba(2,10,24,0.98);border-bottom:1px solid var(--border);padding:20px;flex-direction:column;gap:4px;z-index:99}
+.mobile-menu a{display:block;padding:12px 16px;color:var(--text2);text-decoration:none;font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;border-bottom:1px solid rgba(0,245,255,.06);transition:color .2s}
+.mobile-menu a:hover{color:var(--cyan)}
+.mobile-menu.open{display:flex}
+
+/* ── PHOTO PLACEHOLDER ── */
+.photo-slot{width:100%;aspect-ratio:1;border-radius:4px;background:linear-gradient(135deg,rgba(0,30,70,.9),rgba(0,60,120,.5));border:1px dashed rgba(0,245,255,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text2);font-size:.72rem;letter-spacing:.15em;font-family:'Courier New',monospace;text-align:center;overflow:hidden;position:relative}
+.photo-slot::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,245,255,.04),transparent 70%)}
+.photo-slot svg{width:32px;height:32px;opacity:.4;fill:var(--cyan)}
+.photo-slot.portrait{aspect-ratio:3/4}
+.photo-slot.wide{aspect-ratio:16/9}
+.photo-slot.square{aspect-ratio:1}
+
+/* ── HERO ── */
+#hero{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 24px 60px;z-index:1}
+.hero-badge{font-size:clamp(.65rem,.9vw+.4rem,1rem);letter-spacing:.3em;color:var(--cyan);text-transform:uppercase;font-family:'Courier New',monospace;opacity:0;margin-bottom:20px}
+.hero-name{font-size:clamp(2.8rem,11vw,8.5rem);font-weight:900;letter-spacing:-.01em;line-height:1;color:#fff;opacity:0}
+.glitch{position:relative;display:inline-block}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;color:#fff;pointer-events:none}
+.glitch::before{left:2px;text-shadow:-2px 0 var(--cyan);clip-path:polygon(0 0,100% 0,100% 35%,0 35%);animation:glitch1 3s infinite linear alternate-reverse}
+.glitch::after{left:-2px;text-shadow:2px 0 #ff00ea;clip-path:polygon(0 60%,100% 60%,100% 100%,0 100%);animation:glitch2 2s infinite linear alternate-reverse}
+@keyframes glitch1{0%{clip-path:polygon(0 0,100% 0,100% 35%,0 35%);transform:translate(-2px)}50%{clip-path:polygon(0 10%,100% 10%,100% 45%,0 45%);transform:translate(2px)}100%{clip-path:polygon(0 0,100% 0,100% 30%,0 30%);transform:translate(-2px)}}
+@keyframes glitch2{0%{clip-path:polygon(0 60%,100% 60%,100% 100%,0 100%);transform:translate(2px)}50%{clip-path:polygon(0 55%,100% 55%,100% 90%,0 90%);transform:translate(-2px)}100%{clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);transform:translate(2px)}}
+.hero-title{font-size:clamp(.75rem,1.5vw+.3rem,.95rem);color:var(--text2);letter-spacing:.2em;text-transform:uppercase;margin-top:18px;opacity:0;font-family:'Courier New',monospace}
+.hero-subtitle{font-size:clamp(.8rem,1.2vw+.3rem,.95rem);color:var(--text2);max-width:560px;margin:16px auto 0;opacity:0;line-height:1.9}
+.hero-cta{display:flex;gap:14px;margin-top:36px;flex-wrap:wrap;justify-content:center;opacity:0}
+.btn{padding:11px 28px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;font-family:'Courier New',monospace;border-radius:2px;transition:all .3s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn-primary{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+.btn-primary:hover{background:var(--cyan);color:var(--bg);box-shadow:var(--glow)}
+.btn-secondary{background:transparent;color:var(--text2);border:1px solid rgba(110,168,212,.3)}
+.btn-secondary:hover{border-color:var(--cyan);color:var(--cyan)}
+.scroll-indicator{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0}
+.scroll-line{width:1px;height:50px;background:linear-gradient(to bottom,var(--cyan),transparent);animation:scrollPulse 2s infinite}
+.scroll-text{font-size:.6rem;letter-spacing:.3em;color:var(--text2);text-transform:uppercase;font-family:'Courier New',monospace}
+@keyframes scrollPulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── SECTIONS ── */
+section{position:relative;z-index:1;padding:90px 0}
+.container{max-width:1100px;margin:0 auto;padding:0 clamp(20px,5vw,60px)}
+.section-label{font-size:.68rem;letter-spacing:.45em;color:var(--cyan);text-transform:uppercase;font-family:'Courier New',monospace;margin-bottom:10px;opacity:0}
+.section-title{font-size:clamp(1.8rem,4.5vw,3.2rem);font-weight:800;color:#fff;margin-bottom:50px;opacity:0}
+.section-title span{color:var(--cyan)}
+
+/* ── ABOUT ── */
+.about-grid{display:grid;grid-template-columns:280px 1fr 1fr;gap:40px;align-items:start}
+.about-photo-wrap{position:sticky;top:100px}
+.about-photo-frame{width:100%;aspect-ratio:3/4;border-radius:4px;overflow:hidden;border:1px solid var(--border);box-shadow:0 0 30px rgba(0,245,255,.1);position:relative}
+.about-photo-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.about-photo-glow{position:absolute;inset:0;box-shadow:inset 0 0 30px rgba(0,245,255,.08);pointer-events:none;border-radius:4px}
+.about-text p{color:var(--text2);line-height:1.9;margin-bottom:16px;font-size:.9rem}
+.about-text p strong{color:var(--cyan)}
+.about-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start}
+.stat-card{border:1px solid var(--border);padding:22px 16px;border-radius:4px;text-align:center;background:var(--card);backdrop-filter:blur(6px);transition:border-color .3s,box-shadow .3s}
+.stat-card:hover{border-color:var(--cyan);box-shadow:var(--glow2)}
+.stat-num{font-size:2rem;font-weight:900;color:var(--cyan);font-family:'Courier New',monospace;line-height:1}
+.stat-label{font-size:.68rem;letter-spacing:.18em;color:var(--text2);text-transform:uppercase;margin-top:6px}
+
+/* ── PROJECTS ── */
+#projects{background:linear-gradient(to bottom,transparent,rgba(0,30,60,.3),transparent)}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:22px}
+.project-card{border:1px solid var(--border);border-radius:4px;background:var(--card);backdrop-filter:blur(8px);transition:all .4s;position:relative;overflow:hidden;opacity:0;display:flex;flex-direction:column}
+.project-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);transform:scaleX(0);transition:transform .4s;z-index:1}
+.project-card:hover::before{transform:scaleX(1)}
+.project-card:hover{border-color:rgba(0,245,255,.4);box-shadow:var(--glow2);transform:translateY(-4px)}
+.project-img{width:100%;height:180px;overflow:hidden;flex-shrink:0}
+.project-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.project-card:hover .project-img img{transform:scale(1.06)}
+.project-img .photo-slot{height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)}
+.project-body{padding:24px;flex:1;display:flex;flex-direction:column;gap:8px}
+.project-icon{font-size:1.6rem}
+.project-tag{font-size:.62rem;letter-spacing:.25em;color:var(--cyan);text-transform:uppercase;font-family:'Courier New',monospace}
+.project-name{font-size:1rem;font-weight:700;color:#fff;line-height:1.35}
+.project-desc{font-size:.82rem;color:var(--text2);line-height:1.75;margin-top:4px}
+
+/* ── EXPERIENCE ── */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--cyan),transparent)}
+.timeline-item{position:relative;padding-bottom:44px;opacity:0}
+.timeline-item::before{content:'';position:absolute;left:-33px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--cyan);background:var(--bg);box-shadow:0 0 10px var(--cyan)}
+.timeline-date{font-size:.68rem;letter-spacing:.2em;color:var(--cyan);font-family:'Courier New',monospace;margin-bottom:5px}
+.timeline-role{font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:3px}
+.timeline-company{font-size:.82rem;color:var(--text2);margin-bottom:8px}
+.timeline-desc{font-size:.82rem;color:var(--text2);line-height:1.75}
+
+/* ── EDUCATION ── */
+.edu-stack{display:flex;flex-direction:column;gap:20px}
+.edu-card{border:1px solid var(--border);border-radius:4px;padding:28px 32px;background:var(--card);backdrop-filter:blur(8px);display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;transition:border-color .3s,box-shadow .3s}
+.edu-card:hover{border-color:rgba(0,245,255,.4);box-shadow:var(--glow2)}
+.edu-card.current{border-color:rgba(0,245,255,.35);position:relative;overflow:hidden}
+.edu-card.current::after{content:'NOW';position:absolute;top:14px;right:60px;font-size:.58rem;letter-spacing:.3em;color:var(--bg);background:var(--cyan);padding:3px 8px;border-radius:20px;font-family:'Courier New',monospace}
+.edu-degree{font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:6px}
+.edu-school{font-size:.9rem;color:var(--cyan);margin-bottom:4px}
+.edu-period{font-size:.75rem;color:var(--text2);font-family:'Courier New',monospace;margin-bottom:12px}
+.edu-cgpa{text-align:right;flex-shrink:0}
+.edu-cgpa-num{font-size:2.2rem;font-weight:900;color:var(--cyan);font-family:'Courier New',monospace;line-height:1}
+.edu-cgpa-label{font-size:.65rem;color:var(--text2);letter-spacing:.12em}
+.edu-courses{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.course-tag{font-size:.68rem;padding:3px 11px;border:1px solid var(--border);border-radius:20px;color:var(--text2);letter-spacing:.08em}
+
+/* ── BOOK ── */
+#book{background:linear-gradient(to bottom,transparent,rgba(0,20,50,.4),transparent)}
+.book-grid{display:grid;grid-template-columns:260px 1fr;gap:56px;align-items:center}
+.book-cover-wrap{position:relative}
+.book-cover{width:100%;aspect-ratio:2/3;border-radius:4px;background:linear-gradient(135deg,#0a1628,#0d2244,#071420);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;position:relative;overflow:hidden;box-shadow:20px 20px 40px rgba(0,0,0,.6),-4px 0 15px rgba(0,245,255,.1)}
+.book-cover::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(0,245,255,.06),transparent 60%)}
+.book-spine{position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(to bottom,var(--cyan),var(--blue))}
+.book-photo-slot{width:100%;height:110px;margin-bottom:16px;border-radius:2px;overflow:hidden;position:relative;z-index:1;border:1px dashed rgba(0,245,255,.2)}
+.book-photo-slot img{width:100%;height:100%;object-fit:cover}
+.book-photo-slot .photo-slot{height:100%;aspect-ratio:unset;border:none;border-radius:0;font-size:.6rem}
+.book-title-text{font-size:1.1rem;font-weight:900;color:#fff;letter-spacing:.05em;line-height:1.25;position:relative;z-index:1}
+.book-author-text{font-size:.68rem;color:var(--cyan);letter-spacing:.25em;margin-top:14px;font-family:'Courier New',monospace;position:relative;z-index:1}
+.book-genre{font-size:.62rem;letter-spacing:.3em;color:var(--text2);margin-top:8px;position:relative;z-index:1}
+.book-info h3{font-size:clamp(1.4rem,3vw,2rem);font-weight:800;color:#fff;margin-bottom:10px}
+.book-byline{font-size:.8rem;color:var(--cyan);font-family:'Courier New',monospace;letter-spacing:.15em;margin-bottom:22px}
+.book-info p{color:var(--text2);line-height:1.9;margin-bottom:14px;font-size:.9rem}
+.book-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.book-tag{font-size:.68rem;padding:4px 14px;border:1px solid rgba(0,245,255,.3);border-radius:20px;color:var(--cyan);letter-spacing:.1em}
+
+/* ── SKILLS ── */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(250px,100%),1fr));gap:20px}
+.skill-group{border:1px solid var(--border);border-radius:4px;padding:22px;background:var(--card)}
+.skill-group-title{font-size:.68rem;letter-spacing:.28em;color:var(--cyan);text-transform:uppercase;font-family:'Courier New',monospace;margin-bottom:14px}
+.skill-chips{display:flex;flex-wrap:wrap;gap:7px}
+.skill-chip{font-size:.72rem;padding:4px 11px;border:1px solid var(--border);border-radius:2px;color:var(--text2);transition:all .2s}
+.skill-chip:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,.05)}
+
+/* ── CERTS ── */
+.certs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:16px}
+.cert-card{border:1px solid var(--border);border-radius:4px;padding:18px 20px;background:var(--card);transition:all .3s;opacity:0}
+.cert-card:hover{border-color:rgba(0,245,255,.4);box-shadow:var(--glow2)}
+.cert-icon{font-size:1.4rem;margin-bottom:8px}
+.cert-name{font-size:.85rem;font-weight:600;color:#fff;margin-bottom:4px;line-height:1.4}
+.cert-org{font-size:.72rem;color:var(--cyan);font-family:'Courier New',monospace}
+
+/* ── CONTACT ── */
+#contact{text-align:center}
+.contact-links{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:36px}
+.contact-link{display:flex;align-items:center;gap:10px;padding:13px 24px;border:1px solid var(--border);border-radius:4px;color:var(--text2);text-decoration:none;font-size:.82rem;letter-spacing:.08em;transition:all .3s;background:var(--card)}
+.contact-link:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow2)}
+.contact-link svg{width:17px;height:17px;fill:currentColor;flex-shrink:0}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:36px 24px;text-align:center;font-size:.7rem;color:var(--text2);letter-spacing:.15em;font-family:'Courier New',monospace;position:relative;z-index:1}
+
+/* ── SCANLINES ── */
+.scanlines{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:9990;background:repeating-linear-gradient(to bottom,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px)}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━ RESPONSIVE ━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Tablet: ≤ 900px */
+@media(max-width:900px){
+  nav{padding:16px 24px}
+  .nav-links{display:none}
+  .nav-toggle{display:flex}
+  .about-grid{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .about-photo-wrap{grid-column:1/2;grid-row:1/2;position:static}
+  .about-photo-frame{max-width:220px}
+  .about-text{grid-column:2/3;grid-row:1/2}
+  .about-stats{grid-column:1/-1;grid-row:2/3;grid-template-columns:repeat(4,1fr)}
+  .book-grid{grid-template-columns:200px 1fr;gap:36px}
+  .edu-card{grid-template-columns:1fr;gap:8px}
+  .edu-cgpa{text-align:left}
+}
+
+/* Mobile: ≤ 600px */
+@media(max-width:600px){
+  section{padding:64px 0}
+  .section-title{margin-bottom:36px}
+  /* About — full stack */
+  .about-grid{grid-template-columns:1fr;grid-template-rows:auto}
+  .about-photo-wrap{grid-column:1;grid-row:1;display:flex;justify-content:center;position:static}
+  .about-photo-frame{max-width:180px;aspect-ratio:1;border-radius:50%}
+  .about-text{grid-column:1;grid-row:2}
+  .about-stats{grid-column:1;grid-row:3;grid-template-columns:1fr 1fr}
+  /* Hero */
+  .hero-cta{gap:10px}
+  .btn{padding:10px 20px;font-size:.75rem}
+  /* Book */
+  .book-grid{grid-template-columns:1fr}
+  .book-cover-wrap{max-width:180px;margin:0 auto}
+  /* Nav */
+  nav{padding:14px 18px}
+  /* Contact */
+  .contact-link{padding:11px 18px;font-size:.78rem}
+  /* Edu */
+  .edu-card{padding:22px 18px}
+  .edu-card.current::after{right:18px}
+}
+
+/* Very small: ≤ 380px */
+@media(max-width:380px){
+  .hero-cta{flex-direction:column;align-items:stretch;text-align:center}
+  .btn{justify-content:center}
+  .about-stats{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-text">INITIALIZING_</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#hero">JG_</a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#education">Education</a></li>
+    <li><a href="#book">Novel</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" aria-label="Menu" onclick="document.querySelector('.mobile-menu').classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu">
+  <a href="#about" onclick="this.closest('.mobile-menu').classList.remove('open')">About</a>
+  <a href="#projects" onclick="this.closest('.mobile-menu').classList.remove('open')">Projects</a>
+  <a href="#experience" onclick="this.closest('.mobile-menu').classList.remove('open')">Experience</a>
+  <a href="#education" onclick="this.closest('.mobile-menu').classList.remove('open')">Education</a>
+  <a href="#book" onclick="this.closest('.mobile-menu').classList.remove('open')">Novel</a>
+  <a href="#skills" onclick="this.closest('.mobile-menu').classList.remove('open')">Skills</a>
+  <a href="#contact" onclick="this.closest('.mobile-menu').classList.remove('open')">Contact</a>
+</div>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero">
+  <div class="hero-badge">Mechatronics Engineer · Roboticist · Author</div>
+  <h1 class="hero-name"><span class="glitch" data-text="JOE GABRIEL">JOE GABRIEL</span></h1>
+  <div class="hero-title">// Building the Future, One Prototype at a Time</div>
+  <p class="hero-subtitle">Founder · Engineer · Researcher · Innovator · Writer.<br>From nuclear reactors to floating farms — turning impossible ideas into reality.</p>
+  <div class="hero-cta">
+    <a href="#projects" class="btn btn-primary">⬡ View Projects</a>
+    <a href="#contact" class="btn btn-secondary">⬡ Get in Touch</a>
+  </div>
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    <div class="scroll-text">Scroll</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ABOUT ═══════════════ -->
+<section id="about">
+  <div class="container">
+    <div class="section-label">// 001 — About</div>
+    <h2 class="section-title">Who I <span>Am</span></h2>
+    <div class="about-grid">
+
+      <!-- PHOTO -->
+      <div class="about-photo-wrap">
+        <div class="about-photo-frame">
+          <!-- Replace src below with your actual photo path once you add it -->
+          <!-- <img src="assets/joe.jpg" alt="Joe Gabriel"> -->
+          <div class="photo-slot portrait" style="height:100%;aspect-ratio:unset;border-radius:4px;border:none">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+            <span>YOUR PHOTO<br>HERE</span>
+          </div>
+          <div class="about-photo-glow"></div>
+        </div>
+      </div>
+
+      <!-- TEXT -->
+      <div class="about-text">
+        <p>I'm <strong>Joe Gabriel</strong> — a Mechatronics & Automation engineer now pursuing my <strong>MSc in Robotics & Intelligent Systems at NTU Singapore</strong>, passionate about building systems that bridge the gap between human intent and machine intelligence.</p>
+        <p>As <strong>Founder & CEO of Raft Industries</strong>, I lead a collaborative robotics startup focused on mobile robots and hands-on learning for students and enthusiasts.</p>
+        <p>My work spans nuclear reactor control at <strong>IGCAR</strong>, AI-based autonomous rovers, floating farming capsules, plasma technology, and sustainable engineering — all fuelled by a drive to solve real-world problems through interdisciplinary innovation.</p>
+        <p>When I'm not building robots, I'm writing fiction. My debut novel <strong>"Vestments of Atonement"</strong> channels the same creativity I bring to engineering.</p>
+      </div>
+
+      <!-- STATS -->
+      <div class="about-stats">
+        <div class="stat-card"><div class="stat-num">12+</div><div class="stat-label">Projects Built</div></div>
+        <div class="stat-card"><div class="stat-num">8.51</div><div class="stat-label">B.Tech CGPA</div></div>
+        <div class="stat-card"><div class="stat-num">4+</div><div class="stat-label">Internships</div></div>
+        <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">Novel Published</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PROJECTS ═══════════════ -->
+<section id="projects">
+  <div class="container">
+    <div class="section-label">// 002 — Projects</div>
+    <h2 class="section-title">What I've <span>Built</span></h2>
+    <div class="projects-grid">
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot wide" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🛰️</div>
+          <div class="project-tag">Final Year Capstone</div>
+          <div class="project-name">Landmine Detection Rover</div>
+          <div class="project-desc">Mobile rover for buried landmine detection using sensor fusion. Features terrain navigation, autonomous control, safety protocols, AI-based GPS mapping, and nonholonomic path planning.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">⚛️</div>
+          <div class="project-tag">Nuclear · Mobility</div>
+          <div class="project-name">Micro-SMR Powered Vehicle</div>
+          <div class="project-desc">Feasibility prototype integrating a Micro Small Modular Reactor into a mobile platform. Analysed thermal-electric conversion, shielding, and autonomous control for safe propulsion.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🚁</div>
+          <div class="project-tag">UAV · Energy</div>
+          <div class="project-name">Micro-SMR Powered Flying Object</div>
+          <div class="project-desc">Hybrid power architecture combining Micro-SMR output with lightweight flight-compatible storage for UAV/drone-class vehicles. Focused on energy conversion and thermal shielding in airborne conditions.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🌱</div>
+          <div class="project-tag">AI · IoT · Agriculture</div>
+          <div class="project-name">AI Floating Farming Capsule</div>
+          <div class="project-desc">Self-sustaining AI-controlled floating capsule monitoring water quality, temperature, light, and nutrients for simultaneous cultivation of aquatic organisms and hydroponic plants.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🤖</div>
+          <div class="project-tag">Robotics · HMI</div>
+          <div class="project-name">Gesture-Controlled Omnidirectional Vehicle</div>
+          <div class="project-desc">Omnidirectional mecanum-wheel platform with IMU-based gesture control and a surface-sensing robotic arm using capacitive sensors for adaptive pick-and-place with AI path planning.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">⚡</div>
+          <div class="project-tag">Energy · Defense</div>
+          <div class="project-name">Plasma Gun</div>
+          <div class="project-desc">High-energy plasma-based projectile system exploring plasma generation, containment, and directed energy applications for advanced engineering research.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🌊</div>
+          <div class="project-tag">Environmental · Robotics</div>
+          <div class="project-name">River Cleaning Robot</div>
+          <div class="project-desc">Autonomous aquatic robot designed to detect, collect, and remove surface-level waste and pollutants from rivers — promoting cleaner waterways through robotics.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🏭</div>
+          <div class="project-tag">Energy Harvesting</div>
+          <div class="project-name">Factory Smoke Electric Turbine</div>
+          <div class="project-desc">Electric turbine system designed to capture and convert kinetic energy from wasteful factory exhaust smoke into usable electricity — turning industrial waste into green power.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🗑️</div>
+          <div class="project-tag">Automation · Transit</div>
+          <div class="project-name">Pneumatic Waste Collection System</div>
+          <div class="project-desc">Automated pneumatic waste collection mechanism integrated into transport vehicles — enabling hands-free, efficient waste segregation and collection during transit operations.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🦴</div>
+          <div class="project-tag">Healthcare · Robotics</div>
+          <div class="project-name">Smart Osteotomy Assessment Device</div>
+          <div class="project-desc">Intelligent surgical assessment device for osteotomy procedures — combining sensor integration and data analysis to assist surgeons with real-time bone-cutting precision and feedback.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">📏</div>
+          <div class="project-tag">Nuclear · Instrumentation · IGCAR</div>
+          <div class="project-name">Pipe Bend Ovality Measurement Instrument</div>
+          <div class="project-desc">Handheld field instrument developed for IGCAR Kalpakkam to measure pipe bend ovality in nuclear plant pipelines. Uses a TI LDC1612 28-bit inductance-to-digital sensor with a ferrite-core inductive position slider — replacing the legacy LGO oscillator circuit — for direct, high-precision measurement of Dmax, Dmin, and D₀. Computes ovality as W = (Dmax − Dmin) / D₀ × 100%. Features an ESP32-C3 SuperMini, 1.3″ OLED display, fractional calibration LUT, USB-C charging, and a 3D-printed Vernier caliper-style PETG enclosure (212 × 44 × 28 mm) designed for industrial field deployment.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-img">
+          <div class="photo-slot" style="height:180px;aspect-ratio:unset;border-radius:0;border:none;border-bottom:1px dashed rgba(0,245,255,.15)">
+            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            <span>PROJECT PHOTO</span>
+          </div>
+        </div>
+        <div class="project-body">
+          <div class="project-icon">🖥️</div>
+          <div class="project-tag">Raft Industries · Cyberdeck · Embedded</div>
+          <div class="project-name">Raft Navigator</div>
+          <div class="project-desc">A localised handheld cyberdeck built under Raft Industries — a self-contained portable command console packing glyph display, laser module, ultrasonic ranging, GPS positioning, live flight tracker, and onboard games into one rugged handheld unit. Designed as a fully standalone field device: no phone, no cloud, just raw on-device intelligence in a purpose-built form factor.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EXPERIENCE ═══════════════ -->
+<section id="experience">
+  <div class="container">
+    <div class="section-label">// 003 — Experience</div>
+    <h2 class="section-title">Where I've <span>Worked</span></h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-date">Feb 2025 — Present</div>
+        <div class="timeline-role">Founder & CEO</div>
+        <div class="timeline-company">Raft Industries</div>
+        <div class="timeline-desc">Founded a collaborative robotics startup building efficient mobile robots and providing hands-on learning experiences to students, children, and enthusiasts. Leading product development, team building, and vision execution.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Jan 2024 — Dec 2024</div>
+        <div class="timeline-role">Intern & Part-Timer — Nuclear Research</div>
+        <div class="timeline-company">Indira Gandhi Centre for Atomic Research (IGCAR) · Kalpakkam, India</div>
+        <div class="timeline-desc">Worked on simulation and evaluation of nuclear reactor control systems with a focus on safety logic, redundancy, and automation principles. Gained exposure to critical systems engineering and control protocols in nuclear-grade environments.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Nov 2023 — Dec 2023</div>
+        <div class="timeline-role">Intern — 3D Design & Manufacturing</div>
+        <div class="timeline-company">Vinayaga 3D Prototyping</div>
+        <div class="timeline-desc">End-to-end workflow of CAD modeling, 3D scanning, and printing of mechanical parts. Created custom jigs, fixtures, and enclosures with precision focus.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">Aug 2023 — Oct 2023</div>
+        <div class="timeline-role">Intern — Industrial 3D Printing & Robotics</div>
+        <div class="timeline-company">Sedaxis Advanced Materials</div>
+        <div class="timeline-desc">Hands-on experience with FDM, SLS, DLP, SLA, and CNC-based fabrication. Learned Fusion 360 for advanced 3D design and optimization for additive manufacturing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EDUCATION ═══════════════ -->
+<section id="education">
+  <div class="container">
+    <div class="section-label">// 004 — Education</div>
+    <h2 class="section-title">Where I <span>Studied</span></h2>
+    <div class="edu-stack">
+
+      <!-- NTU — current -->
+      <div class="edu-card current">
+        <div>
+          <div class="edu-degree">MSc in Robotics & Intelligent Systems</div>
+          <div class="edu-school">Nanyang Technological University (NTU) · Singapore</div>
+          <div class="edu-period">2025 — Present</div>
+          <div class="edu-courses">
+            <span class="course-tag">Intelligent Robotics</span>
+            <span class="course-tag">Machine Learning</span>
+            <span class="course-tag">Autonomous Systems</span>
+            <span class="course-tag">Computer Vision</span>
+            <span class="course-tag">Human-Robot Interaction</span>
+          </div>
+        </div>
+        <div class="edu-cgpa">
+          <div style="font-size:1.8rem">🇸🇬</div>
+          <div class="edu-cgpa-label" style="margin-top:6px">NTU SG</div>
+        </div>
+      </div>
+
+      <!-- VIT -->
+      <div class="edu-card">
+        <div>
+          <div class="edu-degree">B.Tech in Mechatronics & Automation</div>
+          <div class="edu-school">VIT University · Chennai, India</div>
+          <div class="edu-period">September 2021 — August 2025</div>
+          <div class="edu-courses">
+            <span class="course-tag">Robotics</span>
+            <span class="course-tag">Embedded Systems</span>
+            <span class="course-tag">Control Systems</span>
+            <span class="course-tag">Machine Vision</span>
+            <span class="course-tag">Artificial Intelligence</span>
+            <span class="course-tag">ROS</span>
+            <span class="course-tag">Kinematics</span>
+            <span class="course-tag">Web Design</span>
+          </div>
+        </div>
+        <div class="edu-cgpa">
+          <div class="edu-cgpa-num">8.51</div>
+          <div class="edu-cgpa-label">CGPA</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ BOOK ═══════════════ -->
+<section id="book">
+  <div class="container">
+    <div class="section-label">// 005 — Creative Work</div>
+    <h2 class="section-title">My <span>Novel</span></h2>
+    <div class="book-grid">
+      <div class="book-cover-wrap">
+        <div class="book-cover">
+          <div class="book-spine"></div>
+          <!-- Replace with actual book cover image -->
+          <div class="book-photo-slot">
+            <div class="photo-slot" style="height:100%;aspect-ratio:unset;border:none;border-radius:0;font-size:.58rem">
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              <span>BOOK COVER<br>PHOTO</span>
+            </div>
+          </div>
+          <div class="book-title-text">VESTMENTS<br>OF<br>ATONEMENT</div>
+          <div class="book-author-text">— JOE GABRIEL —</div>
+          <div class="book-genre">A Novel</div>
+        </div>
+      </div>
+      <div class="book-info">
+        <h3>Vestments of Atonement</h3>
+        <div class="book-byline">// by Joe Gabriel</div>
+        <p>A debut novel by engineer-turned-author Joe Gabriel — where the same creative vision that powers his robotics and engineering work finds expression in prose.</p>
+        <p>"Vestments of Atonement" explores themes of redemption, identity, and consequence — a narrative as intricate and layered as the systems its author builds in his day job.</p>
+        <p>Written between late nights of prototyping and early mornings of research, this novel is a testament to the idea that engineering minds don't just solve equations — they tell stories too.</p>
+        <div class="book-tags">
+          <span class="book-tag">Fiction</span>
+          <span class="book-tag">Debut Novel</span>
+          <span class="book-tag">Redemption</span>
+          <span class="book-tag">Joe Gabriel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SKILLS ═══════════════ -->
+<section id="skills">
+  <div class="container">
+    <div class="section-label">// 006 — Skills</div>
+    <h2 class="section-title">What I <span>Know</span></h2>
+    <div class="skills-grid">
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Engineering</div>
+        <div class="skill-chips">
+          <span class="skill-chip">Mechatronics</span><span class="skill-chip">Robotics & Automation</span>
+          <span class="skill-chip">Control Systems</span><span class="skill-chip">Embedded Systems</span>
+          <span class="skill-chip">Nuclear Engineering</span><span class="skill-chip">Automotive Tech</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Hardware & Fabrication</div>
+        <div class="skill-chips">
+          <span class="skill-chip">Arduino</span><span class="skill-chip">Raspberry Pi</span>
+          <span class="skill-chip">3D Printing (FDM/SLA/SLS)</span><span class="skill-chip">CAD / Fusion 360</span>
+          <span class="skill-chip">CNC Machining</span><span class="skill-chip">Sensor Fusion</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Software & AI</div>
+        <div class="skill-chips">
+          <span class="skill-chip">Python</span><span class="skill-chip">ROS</span>
+          <span class="skill-chip">Gazebo</span><span class="skill-chip">Machine Vision</span>
+          <span class="skill-chip">AI Agent Creation</span><span class="skill-chip">n8n</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Web & Dev</div>
+        <div class="skill-chips">
+          <span class="skill-chip">React.js</span><span class="skill-chip">Web Development</span>
+          <span class="skill-chip">Vibe Coding</span><span class="skill-chip">Vercel</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Research Interests</div>
+        <div class="skill-chips">
+          <span class="skill-chip">Mobile Robotics</span><span class="skill-chip">Healthcare Robotics</span>
+          <span class="skill-chip">HMI / Gesture Control</span><span class="skill-chip">Underwater Robotics</span>
+          <span class="skill-chip">Sustainable AI Tech</span><span class="skill-chip">Autonomous Systems</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">⬡ Languages</div>
+        <div class="skill-chips">
+          <span class="skill-chip">English — Fluent</span>
+          <span class="skill-chip">Tamil — Native</span>
+          <span class="skill-chip">Japanese — Basic</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CERTS -->
+    <div style="margin-top:56px">
+      <div class="section-label" style="opacity:1">// Awards & Certifications</div>
+      <h3 style="font-size:clamp(1.3rem,3vw,1.8rem);font-weight:700;color:#fff;margin:12px 0 28px">Recognition & <span style="color:var(--cyan)">Achievements</span></h3>
+      <div class="certs-grid">
+        <div class="cert-card">
+          <div class="cert-icon">🏆</div>
+          <div class="cert-name">State Level Makeathon 2023 — Winner</div>
+          <div class="cert-org">Innovation Competition</div>
+        </div>
+        <div class="cert-card">
+          <div class="cert-icon">🌍</div>
+          <div class="cert-name">Young Earthpreneur Award 2022</div>
+          <div class="cert-org">Environmental Leadership</div>
+        </div>
+        <div class="cert-card">
+          <div class="cert-icon">🇺🇳</div>
+          <div class="cert-name">UNICEF Global Summit — Delegate</div>
+          <div class="cert-org">UNICEF</div>
+        </div>
+        <div class="cert-card">
+          <div class="cert-icon">🛰️</div>
+          <div class="cert-name">Remote Sensing, GIS & GNSS Certification</div>
+          <div class="cert-org">ISRO — Indian Space Research Organisation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CONTACT ═══════════════ -->
+<section id="contact">
+  <div class="container">
+    <div class="section-label">// 007 — Contact</div>
+    <h2 class="section-title">Let's <span>Connect</span></h2>
+    <p style="color:var(--text2);font-size:.9rem;max-width:500px;margin:0 auto;line-height:1.9">Open to research collaborations, robotics projects, startup opportunities, and good conversations about the future of technology.</p>
+    <div class="contact-links">
+      <a href="mailto:joe.gabriel7007@gmail.com" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        joe.gabriel7007@gmail.com
+      </a>
+      <a href="https://linkedin.com/in/joe-gabriel777" target="_blank" rel="noopener" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn
+      </a>
+      <a href="https://github.com/monstergabbysolos" target="_blank" rel="noopener" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="tel:+918489766607" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        +91 84897 66607
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>&lt;/&gt; JOE GABRIEL · MECHATRONICS ENGINEER · INNOVATOR · AUTHOR · 2025</footer>
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script>
+// ── LOADER ──
+window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('loader').classList.add('gone')},2200)});
+
+// ── CURSOR (desktop only) ──
+if(window.matchMedia('(hover:hover)').matches){
+  const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  const TLEN=12,trails=[];
+  for(let i=0;i<TLEN;i++){
+    const d=document.createElement('div');d.className='trail-dot';
+    d.style.opacity=((i+1)/TLEN)*.22;document.body.appendChild(d);
+    trails.push({el:d,x:0,y:0});
+  }
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+  (function anim(){
+    rx+=(mx-rx)*.15;ry+=(my-ry)*.15;
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+    let px=mx,py=my;
+    trails.forEach(t=>{t.x+=(px-t.x)*.35;t.y+=(py-t.y)*.35;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';px=t.x;py=t.y});
+    requestAnimationFrame(anim);
+  })();
+  document.querySelectorAll('a,button,.project-card,.stat-card,.cert-card,.btn').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2.5)';ring.style.transform='translate(-50%,-50%) scale(1.5)';ring.style.opacity='1'});
+    el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';ring.style.transform='translate(-50%,-50%) scale(1)';ring.style.opacity='.6'});
+  });
+}
+
+// ── THREE.JS ──
+(function(){
+  const canvas=document.getElementById('bg-canvas');
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);
+  camera.position.z=5;
+  const starGeo=new THREE.BufferGeometry(),N=2500,pos=new Float32Array(N*3);
+  for(let i=0;i<N*3;i++)pos[i]=(Math.random()-.5)*110;
+  starGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const starMat=new THREE.PointsMaterial({color:0x00f5ff,size:.18,transparent:true,opacity:.65});
+  scene.add(new THREE.Points(starGeo,starMat));
+  const lGeo=new THREE.BufferGeometry(),lPos=[];
+  for(let i=0;i<70;i++){const x1=(Math.random()-.5)*40,y1=(Math.random()-.5)*30,z1=(Math.random()-.5)*20;lPos.push(x1,y1,z1,x1+(Math.random()-.5)*6,y1+(Math.random()-.5)*6,z1+(Math.random()-.5)*4)}
+  lGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(lPos),3));
+  scene.add(new THREE.LineSegments(lGeo,new THREE.LineBasicMaterial({color:0x005599,transparent:true,opacity:.2})));
+  const r1=new THREE.Mesh(new THREE.TorusGeometry(2,.005,8,80),new THREE.MeshBasicMaterial({color:0x00f5ff,transparent:true,opacity:.12}));
+  r1.position.set(4,-1,-3);scene.add(r1);
+  const r2=new THREE.Mesh(new THREE.TorusGeometry(1.2,.004,8,60),new THREE.MeshBasicMaterial({color:0x0080ff,transparent:true,opacity:.1}));
+  r2.position.set(-5,2,-5);scene.add(r2);
+  let mx2=0,my2=0;
+  document.addEventListener('mousemove',e=>{mx2=(e.clientX/innerWidth-.5)*2;my2=-(e.clientY/innerHeight-.5)*2},{passive:true});
+  let t=0;
+  (function tick(){
+    t+=.004;
+    camera.position.x+=(mx2*.8-camera.position.x)*.03;
+    camera.position.y+=(my2*.5-camera.position.y)*.03;
+    camera.lookAt(scene.position);
+    r1.rotation.x=t*.3;r1.rotation.y=t*.5;r2.rotation.x=-t*.2;r2.rotation.z=t*.4;
+    renderer.render(scene,camera);requestAnimationFrame(tick);
+  })();
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+})();
+
+// ── GSAP SCROLL ──
+gsap.registerPlugin(ScrollTrigger);
+gsap.set(['.hero-badge','.hero-name','.hero-title','.hero-subtitle','.hero-cta','.scroll-indicator'],{opacity:0,y:30});
+const heroTl=gsap.timeline({delay:.4});
+heroTl.to('.hero-badge',{opacity:1,y:0,duration:.8,ease:'power2.out'})
+  .to('.hero-name',{opacity:1,y:0,duration:1,ease:'power3.out'},'-=.4')
+  .to('.hero-title',{opacity:1,y:0,duration:.8,ease:'power2.out'},'-=.5')
+  .to('.hero-subtitle',{opacity:1,y:0,duration:.8,ease:'power2.out'},'-=.5')
+  .to('.hero-cta',{opacity:1,y:0,duration:.8,ease:'power2.out'},'-=.4')
+  .to('.scroll-indicator',{opacity:1,duration:1},'-=.2');
+
+document.querySelectorAll('.section-label,.section-title').forEach(el=>{
+  gsap.set(el,{opacity:0,y:40});
+  gsap.to(el,{opacity:1,y:0,duration:.9,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 86%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.stat-card').forEach((c,i)=>{
+  gsap.set(c,{opacity:0,y:30,scale:.95});
+  gsap.to(c,{opacity:1,y:0,scale:1,duration:.7,delay:i*.1,ease:'power2.out',scrollTrigger:{trigger:c,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.project-card').forEach((c,i)=>{
+  gsap.set(c,{opacity:0,y:50});
+  gsap.to(c,{opacity:1,y:0,duration:.7,delay:(i%3)*.1,ease:'power2.out',scrollTrigger:{trigger:c,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.timeline-item').forEach(c=>{
+  gsap.set(c,{opacity:0,x:-40});
+  gsap.to(c,{opacity:1,x:0,duration:.8,ease:'power2.out',scrollTrigger:{trigger:c,start:'top 86%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.cert-card').forEach((c,i)=>{
+  gsap.set(c,{opacity:0,y:30});
+  gsap.to(c,{opacity:1,y:0,duration:.6,delay:i*.07,ease:'power2.out',scrollTrigger:{trigger:c,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.set('.book-cover',{opacity:0,x:-60});
+gsap.to('.book-cover',{opacity:1,x:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:'#book',start:'top 80%',toggleActions:'play none none none'}});
+gsap.set('.book-info',{opacity:0,x:60});
+gsap.to('.book-info',{opacity:1,x:0,duration:1,delay:.2,ease:'power3.out',scrollTrigger:{trigger:'#book',start:'top 80%',toggleActions:'play none none none'}});
+gsap.utils.toArray('.skill-group').forEach((c,i)=>{
+  gsap.set(c,{opacity:0,y:30});
+  gsap.to(c,{opacity:1,y:0,duration:.6,delay:i*.06,ease:'power2.out',scrollTrigger:{trigger:c,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.edu-card').forEach((c,i)=>{
+  gsap.set(c,{opacity:0,y:30});
+  gsap.to(c,{opacity:1,y:0,duration:.7,delay:i*.12,ease:'power2.out',scrollTrigger:{trigger:'#education',start:'top 80%',toggleActions:'play none none none'}});
+});
+
+// Counter animation
+function animCounter(el,target,dec){
+  const dur=2000,start=performance.now();
+  const suffix=el.dataset.suffix||'';
+  (function u(now){
+    const p=Math.min((now-start)/dur,1),ease=1-Math.pow(1-p,3);
+    el.textContent=dec?(ease*target).toFixed(dec):Math.round(ease*target);
+    if(p<1)requestAnimationFrame(u);else el.textContent=(dec?(target).toFixed(dec):target)+suffix;
+  })(performance.now());
+}
+document.querySelectorAll('.stat-num').forEach(el=>{
+  const raw=el.textContent,hasPlus=raw.includes('+'),val=parseFloat(raw),dec=raw.includes('.')?2:0;
+  if(hasPlus)el.dataset.suffix='+';
+  ScrollTrigger.create({trigger:el,start:'top 85%',once:true,onEnter:()=>animCounter(el,val,dec)});
+});
+
+// Active nav
+const secs=[...document.querySelectorAll('section[id]')];
+const navAs=[...document.querySelectorAll('.nav-links a')];
+window.addEventListener('scroll',()=>{
+  let cur='';secs.forEach(s=>{if(scrollY>=s.offsetTop-220)cur=s.id});
+  navAs.forEach(a=>{const active=a.getAttribute('href')==='#'+cur;a.style.color=active?'var(--cyan)':'';a.style.textShadow=active?'0 0 20px rgba(0,245,255,.4)':''});
+},{passive:true});
+
+// Parallax hero
+window.addEventListener('scroll',()=>{const y=scrollY;document.querySelector('.hero-name').style.transform=`translateY(${y*.12}px)`;document.querySelector('.hero-title').style.transform=`translateY(${y*.08}px)`},{passive:true});
+</script>
+</body>
+</html>
